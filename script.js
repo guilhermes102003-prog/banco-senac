@@ -1,4 +1,7 @@
-// 1. Dados em Memória
+// =========================================================================
+// 1. DADOS EM MEMÓRIA
+// =========================================================================
+// Base de dados simulada contendo clientes pré-cadastrados para teste de login.
 const clientes = [
     { cpf: "111.222.333-44", senha: "123", nome: "Dennis Lopes", saldo: 5000 },
     { cpf: "222.333.444-55", senha: "123", nome: "Nicolas Silva", saldo: 1500 },
@@ -7,9 +10,39 @@ const clientes = [
     { cpf: "555.666.777-88", senha: "123", nome: "Carla Souza", saldo: 10000 }
 ];
 
+// Variável de controle para armazenar o objeto do usuário que realizou o login com sucesso.
 let usuarioLogado = null;
 
-// 2. Seleção de Elementos (DOM)
+// =========================================================================
+// 2. UTILITÁRIOS DE COOKIES (Exercício 1)
+// =========================================================================
+// Funções auxiliares para gravar, ler e remover dados persistentes no navegador (Cookies).
+
+// Salva um cookie com nome, valor e tempo de expiração em dias
+function salvarCookie(nome, valor, dias) {
+    const segundos = dias * 24 * 60 * 60; // Converte dias para segundos (max-age)
+    document.cookie = `${nome}=${encodeURIComponent(valor)}; max-age=${segundos}; path=/; SameSite=Lax`;
+}
+
+// Lê o valor de um cookie específico buscando pelo nome
+function lerCookie(nome) {
+    const cookies = document.cookie.split(';');
+    for (let item of cookies) {
+        const [chave, valor] = item.trim().split('=');
+        if (chave === nome) return decodeURIComponent(valor);
+    }
+    return null;
+}
+
+// Apaga um cookie definindo o seu tempo de vida (max-age) como zero
+function apagarCookie(nome) {
+    document.cookie = `${nome}=; max-age=0; path=/;`;
+}
+
+// =========================================================================
+// 3. SELEÇÃO DE ELEMENTOS DO DOM
+// =========================================================================
+// Mapeamento dos elementos HTML que serão manipulados via JavaScript.
 const secaoLogin = document.querySelector('#login-section');
 const secaoCadastro = document.querySelector('#cadastro-section');
 const secaoSucesso = document.querySelector('#sucesso-section');
@@ -18,10 +51,96 @@ const secaoPainel = document.querySelector('#painel-section');
 const campoSaldo = document.querySelector('#saldo-valor');
 const boasVindas = document.querySelector('#boas-vindas');
 const loginErro = document.querySelector('#login-erro');
+const formCadastro = document.querySelector('#form-cadastro');
+const cadastroErro = document.querySelector('#cadastro-erro');
 
-// 3. Alternância entre Telas (Login <-> Cadastro)
+// Função auxiliar para exibir mensagens de erro amigáveis no formulário de cadastro
+function mostrarErroCadastro(mensagem, seletorInput) {
+    cadastroErro.textContent = mensagem;
+    cadastroErro.style.display = 'block';
+    
+    const inputFoco = document.querySelector(seletorInput);
+    if (inputFoco) {
+        inputFoco.focus(); // Foca no campo que apresentou o erro
+        inputFoco.style.borderColor = '#dc3545'; // Destaca a borda em vermelho
+        
+        // Remove o destaque vermelho e esconde o erro assim que o usuário voltar a digitar
+        inputFoco.addEventListener('input', () => {
+            inputFoco.style.borderColor = '#ddd';
+            cadastroErro.style.display = 'none';
+        }, { once: true });
+    }
+}
+
+// =========================================================================
+// 4. AUTO-SAVE DE CADASTRO COM LOCALSTORAGE E TTL (Exercício 2)
+// =========================================================================
+// Define o tempo de validade do rascunho em milissegundos (60 segundos para testes)
+const TEMPO_VALIDADE_RASCUNHO_MS = 60 * 1000; 
+
+// Evento disparado sempre que o usuário digita algo no formulário de cadastro (Auto-save)
+formCadastro.addEventListener('input', () => {
+    const rascunho = {
+        dados: {
+            nome: document.querySelector('#cad-nome').value,
+            cpf: document.querySelector('#cad-cpf').value,
+            email: document.querySelector('#cad-email').value,
+            celular: document.querySelector('#cad-celular').value,
+            cep: document.querySelector('#cad-cep').value,
+            endereco: document.querySelector('#cad-endereco').value,
+            cidade: document.querySelector('#cad-cidade').value,
+            estado: document.querySelector('#cad-estado').value
+        },
+        timestamp: Date.now() // Armazena o momento exato em que o rascunho foi salvo
+    };
+    // Salva os dados convertidos em JSON no LocalStorage do navegador
+    localStorage.setItem('senac_rascunho_cadastro', JSON.stringify(rascunho));
+});
+
+// Função para restaurar o rascunho salvo, verificando se ele já expirou (TTL)
+function restaurarRascunho() {
+    const dadosSalvos = localStorage.getItem('senac_rascunho_cadastro');
+    if (!dadosSalvos) return;
+
+    const rascunho = JSON.parse(dadosSalvos);
+    const tempoDecorrido = Date.now() - rascunho.timestamp;
+
+    // Se o tempo decorrido for maior que o permitido, descarta o rascunho
+    if (tempoDecorrido > TEMPO_VALIDADE_RASCUNHO_MS) {
+        console.warn('Rascunho expirado por limite de tempo.');
+        localStorage.removeItem('senac_rascunho_cadastro');
+        return;
+    }
+
+    // Preenche os campos do formulário com os dados salvos anteriormente
+    const d = rascunho.dados;
+    document.querySelector('#cad-nome').value = d.nome || '';
+    document.querySelector('#cad-cpf').value = d.cpf || '';
+    document.querySelector('#cad-email').value = d.email || '';
+    document.querySelector('#cad-celular').value = d.celular || '';
+    document.querySelector('#cad-cep').value = d.cep || '';
+    document.querySelector('#cad-endereco').value = d.endereco || '';
+    document.querySelector('#cad-cidade').value = d.cidade || '';
+    document.querySelector('#cad-estado').value = d.estado || '';
+}
+
+// Botão para limpar/descartar manualmente o rascunho salvo no LocalStorage
+document.querySelector('#link-limpar-rascunho').addEventListener('click', (e) => {
+    e.preventDefault();
+    if (confirm('Deseja descartar todos os dados preenchidos deste rascunho?')) {
+        localStorage.removeItem('senac_rascunho_cadastro');
+        formCadastro.reset();
+    }
+});
+
+// =========================================================================
+// 5. NAVEGAÇÃO ENTRE TELAS
+// =========================================================================
+// Controla a visibilidade das seções (SPA - Single Page Application simples)
+
 document.querySelector('#link-ir-cadastro').addEventListener('click', (e) => {
     e.preventDefault();
+    restaurarRascunho(); // Tenta restaurar rascunho ao abrir a tela de cadastro
     secaoLogin.style.display = 'none';
     secaoCadastro.style.display = 'block';
 });
@@ -32,7 +151,18 @@ document.querySelector('#link-voltar-login').addEventListener('click', (e) => {
     secaoLogin.style.display = 'block';
 });
 
-// 4. Eventos de Login
+document.querySelector('#btn-voltar-inicio').addEventListener('click', () => {
+    location.reload(); // Recarrega a página para reiniciar o fluxo
+});
+
+document.querySelector('#btn-sair').addEventListener('click', () => {
+    location.reload(); // Encerra a sessão e recarrega
+});
+
+// =========================================================================
+// 6. EVENTOS DE LOGIN (COM GRAVAÇÃO DE COOKIES)
+// =========================================================================
+// Valida as credenciais digitadas comparando com o array estático de clientes
 document.querySelector('#btn-login').addEventListener('click', () => {
     const cpfDigitado = document.querySelector('#input-cpf').value.trim();
     const senhaDigitada = document.querySelector('#input-senha').value.trim();
@@ -42,190 +172,170 @@ document.querySelector('#btn-login').addEventListener('click', () => {
     if (clienteEncontrado) {
         usuarioLogado = clienteEncontrado;
         loginErro.style.display = 'none';
+
+        // Coleta dados para gravar nos cookies (lembrar usuário e último acesso)
+        const primeiroNome = clienteEncontrado.nome.split(' ')[0];
+        const agora = new Date().toLocaleString('pt-BR');
+
+        salvarCookie('senac_cpf', clienteEncontrado.cpf, 30);
+        salvarCookie('senac_nome', primeiroNome, 30);
+        salvarCookie('senac_ultimo_acesso', agora, 30);
+
+        // Altera a visualização para o painel logado
         secaoLogin.style.display = 'none';
         secaoPainel.style.display = 'block';
 
         campoSaldo.textContent = `R$ ${usuarioLogado.saldo.toFixed(2)}`;
         boasVindas.textContent = `Olá, ${usuarioLogado.nome}`;
     } else {
-        loginErro.style.display = 'block';
+        loginErro.style.display = 'block'; // Mostra mensagem de erro de login
     }
 });
 
-// 5. Lógica de Submissão de Cadastro (Onde aplicaremos as RegEx)
-document.querySelector('#form-cadastro').addEventListener('submit', (e) => {
-    e.preventDefault();
+// =========================================================================
+// 7. SUBMISSÃO DE CADASTRO (EXERCÍCIO DE REGEX + POST ASYNC/AWAIT)
+// =========================================================================
+formCadastro.addEventListener('submit', async (e) => {
+    e.preventDefault(); // Evita o recarregamento padrão do formulário
 
-    // TODO: Os alunos vão validar os campos com RegEx e conferir se as senhas coincidem.
-    // Após a validação com sucesso, transita para a tela de análise:
-    secaoCadastro.style.display = 'none';
-    secaoSucesso.style.display = 'block';
+    // Esconde qualquer erro anterior ao tentar enviar novamente
+    cadastroErro.style.display = 'none';
+
+    // Coleta os valores digitados em cada campo
+    const nome = document.querySelector('#cad-nome').value.trim();
+    const cpf = document.querySelector('#cad-cpf').value.trim();
+    const email = document.querySelector('#cad-email').value.trim();
+    const celular = document.querySelector('#cad-celular').value.trim();
+    const cep = document.querySelector('#cad-cep').value.trim();
+    const endereco = document.querySelector('#cad-endereco').value.trim();
+    const cidade = document.querySelector('#cad-cidade').value.trim();
+    const estado = document.querySelector('#cad-estado').value.trim();
+    const senha = document.querySelector('#cad-senha').value.trim();
+    const confirmaSenha = document.querySelector('#cad-confirma-senha').value.trim();
+
+    // =====================================================================
+    // ÁREA DE EXERCÍCIO DOS ALUNOS: ESCREVER AS EXPRESSÕES REGULARES (REGEX)
+    // =====================================================================
+
+    // 1. Validação do Nome Completo (Deve conter ao menos nome e sobrenome)
+    const regexNome = /^[A-Za-zÀ-ÖØ-öø-ÿ]+(\s+[A-Za-zÀ-ÖØ-öø-ÿ]+)+$/; // TODO: Escrever a Regex para nome completo
+    if (!regexNome.test(nome)) {
+        mostrarErroCadastro("Por favor, insira o nome completo (Nome e Sobrenome).", '#cad-nome');
+        return;
+    }
+
+    // 2. Validação do CPF (Com ou sem pontos e hífen: 000.000.000-00 ou 11 dígitos seguidos)
+    const regexCpf = /^(\d{3}\.\d{3}\.\d{3}-\d{2}|\d{11})$/; // TODO: Escrever a Regex para CPF
+    if (!regexCpf.test(cpf)) {
+        mostrarErroCadastro("CPF inválido! Digite apenas os números ou use o formato 000.000.000-00.", '#cad-cpf');
+        return;
+    }
+
+    // 3. Validação de E-mail (Formato padrão: texto@texto.texto)
+    const regexEmail = /^[\w.+-]+@[\w-]+(\.[\w-]+)+$/; // TODO: Escrever a Regex para E-mail
+    if (!regexEmail.test(email)) {
+        mostrarErroCadastro("E-mail inválido! Verifique o endereço digitado.", '#cad-email');
+        return;
+    }
+
+    // 4. Validação de Celular (Com DDD, parênteses e hífen opcionais)
+    const regexCelular = /^(\(\d{2}\)|\d{2})\s?\d{5}[-\s]?\d{4}$/;
+    // TODO: Escrever a Regex para Celular
+    if (!regexCelular.test(celular)) {
+        mostrarErroCadastro("Celular inválido! Ex: (11) 99999-9999 ou 11999999999.", '#cad-celular');
+        return;
+    }
+
+    // 5. Validação de CEP (Formato exato: 00000-000)
+    const regexCep = /^\d{5}-?\d{3}$/; // TODO: Escrever a Regex para CEP
+    if (!regexCep.test(cep)) {
+        mostrarErroCadastro("CEP inválido! Utilize o formato 00000-000.", '#cad-cep');
+        return;
+    }
+
+    // 6. Validação de Senha (Mínimo 8 caracteres, com letra maiúscula, minúscula e número)
+    const regexSenha = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/; // TODO: Escrever a Regex para Senha forte
+    if (!regexSenha.test(senha)) {
+        mostrarErroCadastro("A senha deve ter no mínimo 8 caracteres, contendo letras maiúsculas, minúsculas e números.", '#cad-senha');
+        return;
+    }
+
+    // 7. Confirmação de Senha (Verifica se os dois campos de senha coincidem)
+    if (senha !== confirmaSenha) {
+        mostrarErroCadastro("As senhas não coincidem!", '#cad-confirma-senha');
+        return;
+    }
+
+    // Se passou por todas as validações, prossegue com o envio (POST) assíncrono para a API
+    const novoCliente = { nome, cpf, email, celular, cep, endereco, cidade, estado, senha };
+
+    try {
+        const resposta = await fetch('https://senac-bank-api.dennislopes.com.br/api/clientes', {
+            method: 'POST',
+            headers: { 'accept': '*/*', 'Content-Type': 'application/json' },
+            body: JSON.stringify(novoCliente)
+        });
+
+        if (!resposta.ok) {
+            throw new Error(`Erro ao registar cliente: Status ${resposta.status}`);
+        }
+
+        const dadosResposta = await resposta.json();
+        console.log("Registo efetuado com sucesso na API:", dadosResposta);
+
+        // Limpa o rascunho do LocalStorage e reseta o formulário após o sucesso
+        localStorage.removeItem('senac_rascunho_cadastro');
+        formCadastro.reset();
+
+        // Altera para a tela de sucesso
+        secaoCadastro.style.display = 'none';
+        secaoSucesso.style.display = 'block';
+
+    } catch (erro) {
+        console.error("Erro na requisição POST:", erro.message);
+        mostrarErroCadastro("Ocorreu um erro ao comunicar com o servidor. Tente novamente mais tarde.", '#cad-nome');
+    }
 });
 
-// 6. Botão para voltar ao início a partir da tela de sucesso
-document.querySelector('#btn-voltar-inicio').addEventListener('click', () => {
-    location.reload();
-});
-
-// 7. Operações Bancárias (Espaço reservado para as próximas aulas / API)
-document.querySelector('#btn-depositar').addEventListener('click', () => { });
-document.querySelector('#btn-sacar').addEventListener('click', () => { });
-document.querySelector('#btn-transferir').addEventListener('click', () => { });
-
-document.querySelector('#btn-sair').addEventListener('click', () => {
-    location.reload();
-});
-
-// 8. Seleciona o formulário de cadastro na página
-const formCadastro = document.querySelector('#form-cadastro');
-if (formCadastro) {
- // Adiciona um ouvinte para disparar sempre que houver digitação nos inputs
- formCadastro.addEventListener('input', () => {
- // Cria um objeto estruturado contendo os dados atuais dos campos
- const dadosRascunho = {
- dados: {
- nome: document.querySelector('#cad-nome').value,
- cpf: document.querySelector('#cad-cpf').value,
- email: document.querySelector ('#cad-email').value,
- celular: document.querySelector('#cad-celular').value,
- cep: document.querySelector('#cad-cep').value,
- endereco: document.querySelector('#cad-endereco').value,
- cidade: document.querySelector('#cad-estado').value,
- estado: document.querySelector('#cad-estado').value
- },
-
- timestamp: new Date().getTime()
-
- };
- // Salva no localStorage convertendo o objeto em string JSON
- localStorage.setItem('senac_rascunho_cadastro', JSON.stringify(dadosRascunho));
- });
-}
-
-// 9. Executado recuperação dos dados assim que a página é carregada
-document.addEventListener('DOMContentLoaded', () => {
-    const rascunhoSalvo = localStorage.getItem('senac_rascunho_cadastro');
-    if (rascunhoSalvo) {
-    // Converte a string JSON de volta para objeto JavaScript
-    const rascunho = JSON.parse(rascunhoSalvo);
-    const d = rascunho.dados;
-    // Preenche os campos do formulário com os dados salvos anteriormente
-    // FAÇA O MESMO PARA OS CAMPOS ABAIXO:
-    // cpf, email, celular, cep, endereco, cidade, estado
-    document.querySelector('#cad-nome').value = d.nome || '';
-    document.querySelector('#cad-cpf').value = d.cpf || '';
-    document.querySelector('#cad-email').value = d.email || '';
-    document.querySelector('#cad-celular').value = d.celular || '';
-    document.querySelector('#cad-cep').value = d.cep || '';
-    document.querySelector('#cad-endereco').value = d.endereco || '';
-    document.querySelector('#cad-cidade').value = d.cidade || '';
-    document.querySelector('#cad-estado').value = d.estado || '';
-
-    // Opcional: Exibir um aviso visual para o usuário informando que o rascunho foi recuperado
-    console.log("Rascunho de cadastro recuperado com sucesso!");
-    }
-   });
-
-   // 10. Limpeza ao submeter o formulário com sucesso
-if (formCadastro) {
-    formCadastro.addEventListener('submit', (e) => {
-    // Use o preventDefault() para evitar o recarregamento da página.
-    e.preventDefault();
-
-    // Remova o rascunho do localStorage
-    localStorage.removeItem('senac_rascunho_cadastro');
-
-    // Resete o formulário
-    formCadastro.reset();
-
-    secaoCadastro.style.display = 'none';
-    secaoSucesso.style.display = 'block';
-    });
-   }
-   
-   // 11. Botão de descarte manual do rascunho
-const btnLimparRascunho = document.querySelector('#link-limpar-rascunho');
-    if (btnLimparRascunho) {
-    btnLimparRascunho.addEventListener('click', (e) => {
-    e.preventDefault();
-    if (confirm('Deseja realmente descartar o rascunho do cadastro?')) {
-    localStorage.removeItem('senac_rascunho_cadastro');
-    formCadastro.reset();
- }
- });
-}
-
-// Funções auxiliares de cookies (salvar, ler, apagar)
-function salvarCookie(nome, valor, dias) {
-    const d = new Date();
-    d.setTime(d.getTime() + (dias * 24 * 60 * 60 * 1000));
-     //pconst d = new Date(Date.now() + (dias * 24 * 60 * 60 * 1000));
-    let expires = "expires=" + d.toUTCString();
-    document.cookie = nome + "=" + encodeURIComponent(valor) + ";" + expires + ";path=/";
-    }
-    function lerCookie(nome) {
-    let nameEQ = nome + "=";
-    let ca = document.cookie.split(';');
-    for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    while (c.charAt(0) == ' ') c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) == 0) return decodeURIComponent(c.substring(nameEQ.length, c.length));
-    }
-    return null;
-    }
-    function apagarCookie(nome) {
-    document.cookie = nome + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    }
-
-    // 12. Login com Gravação de Cookies
-    document.querySelector('#btn-login').addEventListener('click', () => {
-    const cpfDigitado = document.querySelector('#input-cpf').value.trim();
-    const senhaDigitada = document.querySelector('#input-senha').value.trim();
-    const clienteEncontrado = clientes.find(c => c.cpf === cpfDigitado && c.senha === senhaDigitada);
-    if (clienteEncontrado) {
-    usuarioLogado = clienteEncontrado;
-    loginErro.style.display = 'none';
-    // Gravando cookies para identificação do dispositivo
-    const primeiroNome = clienteEncontrado.nome.split(' ')[0];
-    const agora = new Date().toLocaleString('pt-BR');
-    salvarCookie('senac_cpf', clienteEncontrado.cpf, 30);
-    salvarCookie('senac_nome', primeiroNome, 30);
-    salvarCookie('senac_ultimo_acesso', agora, 30);
-    secaoLogin.style.display = 'none';
-    secaoPainel.style.display = 'block';
-    campoSaldo.textContent = `R$ ${usuarioLogado.saldo.toFixed(2)}`;
-    boasVindas.textContent = `Olá, ${usuarioLogado.nome}`;
-    } else {
-    loginErro.style.display = 'block';
-    }
-    })
-
-    // 13. Leitura de cookies na inicialização da página
-    function verificarReconhecimento() {
+// =========================================================================
+// 8. INICIALIZAÇÃO DA PÁGINA (LEITURA DE COOKIES)
+// =========================================================================
+// Verifica ao carregar a página se existem cookies salvos para reconhecer o usuário anterior
+function verificarReconhecimento() {
     const cpfSalvo = lerCookie('senac_cpf');
     const nomeSalvo = lerCookie('senac_nome');
     const ultimoAcesso = lerCookie('senac_ultimo_acesso');
     const subtitulo = document.querySelector('#login-section .subtitle');
+
     if (cpfSalvo && nomeSalvo) {
-    document.querySelector('#input-cpf').value = cpfSalvo;
-    subtitulo.innerHTML = `Que bom ter você de volta, <strong>${nomeSalvo}</strong>!<br>
-    <small style="color: #6c757d;">Último acesso: ${ultimoAcesso}</small><br>
-    <a href="#" id="link-trocar-usuario" style="font-size: 0.75rem; color: #0056b3; font-weight: bold;">
-    Não é você? Trocar de conta
-    </a>`;
-    document.querySelector('#input-senha').focus();
-    document.querySelector('#link-trocar-usuario').addEventListener('click', (e) => {
-    e.preventDefault();
-    apagarCookie('senac_cpf');
-    apagarCookie('senac_nome');
-    apagarCookie('senac_ultimo_acesso');
-    document.querySelector('#input-cpf').value = '';
-    document.querySelector('#input-senha').value = '';
-    subtitulo.textContent = 'Portal do Cliente';
-    document.querySelector('#input-cpf').focus();
-    });
+        // Preenche automaticamente o CPF salvo
+        document.querySelector('#input-cpf').value = cpfSalvo;
+
+        // Customiza a interface de boas-vindas com base nos dados do Cookie
+        subtitulo.innerHTML = `Que bom ter você de volta, <strong>${nomeSalvo}</strong>!<br>
+            <small style="color: #6c757d;">Último acesso: ${ultimoAcesso || 'Primeiro acesso'}</small><br>
+            <a href="#" id="link-trocar-usuario" style="font-size: 0.75rem; color: #0056b3; font-weight: bold;">
+                Não é você? Trocar de conta
+            </a>`;
+
+        document.querySelector('#input-senha').focus(); // Foca direto no campo de senha
+
+        // Permite ao usuário limpar os cookies caso queira entrar com outra conta
+        document.querySelector('#link-trocar-usuario').addEventListener('click', (e) => {
+            e.preventDefault();
+            apagarCookie('senac_cpf');
+            apagarCookie('senac_nome');
+            apagarCookie('senac_ultimo_acesso');
+
+            document.querySelector('#input-cpf').value = '';
+            document.querySelector('#input-senha').value = '';
+            subtitulo.textContent = 'Portal do Cliente';
+            document.querySelector('#input-cpf').focus();
+        });
     }
-    }
-    window.addEventListener('DOMContentLoaded', () => {
+}
+
+// Dispara a verificação de reconhecimento assim que o DOM estiver completamente carregado
+window.addEventListener('DOMContentLoaded', () => {
     verificarReconhecimento();
-    });
+});
