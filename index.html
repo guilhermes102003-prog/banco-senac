@@ -1,25 +1,28 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <title>Banco SENAC - Conta Digital</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div id="container">
-        
+
         <!-- 1. SEÇÃO DE LOGIN -->
         <section id="login-section">
             <div class="banco-logo-container">
                 <img src="senac-logo.png" alt="Logótipo Senac" class="logo-senac">
                 <div class="banco-tag">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0056b3" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0056b3" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3" />
                     </svg>
                     <span>Banco Digital</span>
                 </div>
             </div>
-            
+
             <p class="subtitle">Portal do Cliente</p>
 
             <input type="text" id="input-cpf" placeholder="CPF (ex: 111.222.333-44)">
@@ -38,15 +41,19 @@
                 <img src="senac-logo.png" alt="Logótipo Senac" class="logo-senac-mini">
                 <span class="badge-banco">Banco SENAC</span>
             </div>
-            
+
+            <!-- ALTERAÇÃO AQUI: Título com link para limpar rascunho -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin: 10px 0 15px 0;">
-                <h2 class="titulo-secao" style="margin: 0;">Registo de Novo Cliente</h2>
-                <a href="#" id="link-limpar-rascunho" style="font-size: 0.75rem; color: #dc3545; text-decoration: none; font-weight: bold;">
+                <h2 class="titulo-secao" style="margin: 0;">Registro de Novo Cliente</h2>
+                <a href="#" id="link-limpar-rascunho"
+                    style="font-size: 0.75rem; color: #dc3545; text-decoration: none; font-weight: bold;">
                     Limpar rascunho
                 </a>
             </div>
 
-            <form id="form-cadastro">
+            <form id="form-cadastro" novalidate>
+                <p id="cadastro-erro" class="mensagem-erro"
+                    style="display: none; margin-bottom: 15px; text-align: left;"></p>
                 <div class="campo-grupo">
                     <label for="cad-nome">Nome Completo</label>
                     <input type="text" id="cad-nome" placeholder="Ex: Maria Silva">
@@ -96,8 +103,8 @@
                     <label for="cad-confirma-senha">Confirmar Senha</label>
                     <input type="password" id="cad-confirma-senha" placeholder="Digite a senha novamente">
                 </div>
-                
-                <button type="submit" id="btn-cadastrar">Concluir Registo</button>
+
+                <button type="submit" id="btn-cadastrar">Concluir Registro</button>
             </form>
 
             <p class="link-alternativa">
@@ -114,14 +121,16 @@
 
             <div class="status-container">
                 <div class="icone-relogio">
-                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ffc107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ffc107" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"></circle>
                         <polyline points="12 6 12 12 16 14"></polyline>
                     </svg>
                 </div>
                 <h2>Cadastro em Análise!</h2>
                 <p class="texto-analise">
-                    Recebemos os seus dados com sucesso. A nossa equipe de segurança está a analisar as informações para a abertura da sua conta digital.
+                    Recebemos os seus dados com sucesso. A nossa equipe de segurança está a analisar as informações para
+                    a abertura da sua conta digital.
                 </p>
                 <p class="texto-analise-sub">
                     Entraremos em contato através do e-mail e telefone cadastrados assim que o processo for concluído.
@@ -140,7 +149,7 @@
                 </div>
                 <h2 id="boas-vindas">Olá, Cliente</h2>
             </div>
-            
+
             <div class="saldo-box">
                 <p>Saldo Disponível</p>
                 <strong id="saldo-valor">R$ 0,00</strong>
@@ -149,7 +158,7 @@
             <div class="operacoes">
                 <h3>Operações Bancárias</h3>
                 <input type="number" id="valor-op" placeholder="Valor R$" step="0.01" min="0">
-                
+
                 <div class="botoes">
                     <button id="btn-depositar">Depositar</button>
                     <button id="btn-sacar">Sacar</button>
@@ -167,4 +176,5 @@
     </div>
     <script src="script.js"></script>
 </body>
+
 </html>
